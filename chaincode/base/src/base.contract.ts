@@ -13,13 +13,6 @@ export class BaseContract extends Contract {
                 docId: 'ADSF',
                 srvId: '015',
             },
-            {
-                data: {
-                    nombre: 'test',
-                },
-                docId: 'ADSF1',
-                srvId: '015s',
-            },
         ];
 
         for (let i = 0; i < baseModels.length; i++) {
@@ -47,26 +40,36 @@ export class BaseContract extends Contract {
         documentId: string,
         data: string,
     ) {
-        console.info('============= START : Create Model ===========');
-
         const newModel: object = JSON.parse(data);
-
         const model: ModelBase = {
             data: newModel,
             docId: documentId,
             srvId: serviceId,
         };
-
-        await ctx.stub.putState(documentId, Buffer.from(JSON.stringify(model)));
-        console.info('============= END : Create Model ===========');
+        const newId = documentId;
+        await ctx.stub.putState(newId, Buffer.from(JSON.stringify(model)));
     }
 
-    public async queryAllCars(ctx: Context): Promise<string> {
-        const startKey = 'CAR0';
-        const endKey = 'CAR999';
+    public async getAllModels(
+        ctx: Context,
+        serviceId: string,
+    ): Promise<string> {
+        const modelAsBytes = await ctx.stub.getState(serviceId);
+        if (!modelAsBytes || modelAsBytes.length === 0) {
+            throw new Error(`Model with ${serviceId} does not exist`);
+        }
+        console.log(modelAsBytes.toString());
+        return modelAsBytes.toString();
+    }
+
+    public async queryAllCars(
+        ctx: Context,
+        serviceId: string,
+    ): Promise<string> {
+        const startKey = serviceId + '0';
+        const endKey = serviceId + '999999999999999999999';
 
         const iterator = await ctx.stub.getStateByRange(startKey, endKey);
-
         const allResults = [];
         while (true) {
             const res = await iterator.next();
@@ -82,7 +85,10 @@ export class BaseContract extends Contract {
                     console.log(err);
                     Record = res.value.value.toString('utf8');
                 }
-                allResults.push({ Key, Record });
+                allResults.push({ Key: '1234567', Record: 'ID:' + Record.srvId });
+                if (Record.srvId === serviceId) {
+                    allResults.push({ Key, Record });
+                }
             }
             if (res.done) {
                 console.log('end of data');
@@ -93,35 +99,17 @@ export class BaseContract extends Contract {
         }
     }
 
-    public async updateStateModel(ctx: Context, docId: string, newModel: JSON) {
-        console.info('============= START : changeCarOwner ===========');
-
+    public async updateStateModel(
+        ctx: Context,
+        docId: string,
+        newModel: string,
+    ) {
         const modelAsBytes = await ctx.stub.getState(docId); // get the car from chaincode state
         if (!modelAsBytes || modelAsBytes.length === 0) {
             throw new Error(`${docId} does not exist`);
         }
         const model: ModelBase = JSON.parse(modelAsBytes.toString());
-        model.data = newModel;
-
+        model.data = JSON.parse(newModel);
         await ctx.stub.putState(docId, Buffer.from(JSON.stringify(model)));
-        console.info('============= END : changeCarOwner ===========');
-    }
-
-    public async changeCarOwner(
-        ctx: Context,
-        carNumber: string,
-        newOwner: string,
-    ) {
-        console.info('============= START : changeCarOwner ===========');
-
-        const carAsBytes = await ctx.stub.getState(carNumber); // get the car from chaincode state
-        if (!carAsBytes || carAsBytes.length === 0) {
-            throw new Error(`${carNumber} does not exist`);
-        }
-        const car: Car = JSON.parse(carAsBytes.toString());
-        car.owner = newOwner;
-
-        await ctx.stub.putState(carNumber, Buffer.from(JSON.stringify(car)));
-        console.info('============= END : changeCarOwner ===========');
     }
 }
