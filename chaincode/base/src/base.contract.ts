@@ -10,7 +10,7 @@ export class BaseContract extends Contract {
                     nombre: 'test',
                 },
                 documentId: 'ADSF',
-                namecomponent: 'car',
+                nameComponent: 'car',
                 serviceId: '015',
                 typeComponent: 'asset',
             },
@@ -36,7 +36,7 @@ export class BaseContract extends Contract {
         ctx: Context,
         serviceId: string,
         typeComponent: string,
-        namecomponent: string,
+        nameComponent: string,
         documentId: string,
         data: string,
     ) {
@@ -44,7 +44,7 @@ export class BaseContract extends Contract {
         const model: ModelBase = {
             data: newModel,
             documentId,
-            namecomponent,
+            nameComponent,
             serviceId,
             typeComponent,
         };
